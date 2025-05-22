@@ -64,3 +64,5 @@ data/
 # pixi environments
 .pixi
 *.egg-info
+.env
+.gitattributes
