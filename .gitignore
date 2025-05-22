@@ -1,0 +1,66 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+.Python
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# profiling
+.prof
+
+# local dev tools
+.idea/
+.vscode/
+*.swp
+
+# Jupyter
+.ipynb_checkpoints
+
+# Dist
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+
+# Data
+data/
+
+# pixi environments
+.pixi
+*.egg-info
