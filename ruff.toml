@@ -1,0 +1,12 @@
+[lint]
+select = ["ALL"]
+ignore = [
+        "D101", # docsting
+        "D102", # docsting
+        "D103", # docsting
+        "TC001", # type checking
+        "TC002",    # type checking
+        "TC003",# type checking
+        "TRY002", # own exception
+
+   ]
