@@ -14,8 +14,10 @@ langchain = "*"
 langgraph = "*"
 pydantic = "*"
 
+
 [pypi-dependencies]
 gradio = "*"
+chromadb= "*"
 
 [feature.prod.dependencies]
 

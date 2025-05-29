@@ -13,6 +13,24 @@ from commons.attack_patterns import (
     NormalizedAttackPattern,
 )
 from commons.attack_relationships import Relationship
+from commons.cve_items import (
+    CVE,
+    BaseMetricV3,
+    Configuration,
+    CPEMatch,
+    CVEDataMeta,
+    CVEItem,
+    CVSSv3,
+    Description,
+    DescriptionData,
+    Impact,
+    Node,
+    ProblemType,
+    ProblemTypeData,
+    ProblemTypeDescription,
+    ReferenceData,
+    References,
+)
 from commons.instruction_bundle import IntrusionSet, IstructionBundle
 from commons.logger import get_logger
 from config import Config
@@ -96,43 +114,14 @@ class DataParser:
             output_path.mkdir(parents=True, exist_ok=True)
 
             for item in data.get("CVE_Items", []):
-                cve_id = (
-                    item.get("cve", {}).get("CVE_data_meta", {}).get("ID", "UNKNOWN")
+                cve_item: CVEItem = cls.parse_cve_json(data=item)
+                output_file: Path = (
+                    output_path
+                    / f"""{cve_item.cve.cve_data_meta.id}
+                    {cve_item.cve.cve_data_meta.assigner}.json"""
                 )
-                logger.info("Processing CVE item: %s", cve_id)
-
-                description_data = (
-                    item.get("cve", {})
-                    .get("description", {})
-                    .get("description_data", [])
-                )
-                description = description_data[0]["value"] if description_data else ""
-
-                references = [
-                    ref.get("url", "")
-                    for ref in item.get("cve", {})
-                    .get("references", {})
-                    .get("reference_data", [])
-                ]
-
-                impact_data = item.get("impact", {}).get("baseMetricV3", {})
-                severity = impact_data.get("cvssV3", {}).get("baseSeverity", "UNKNOWN")
-                exploitability_score = impact_data.get("exploitabilityScore", 0.0)
-                impact_score = impact_data.get("impactScore", 0.0)
-
-                flat_item: dict[str, Any] = {
-                    "cve_id": cve_id,
-                    "description": description,
-                    "published_date": item.get("publishedDate", ""),
-                    "last_modified_date": item.get("lastModifiedDate", ""),
-                    "severity": severity,
-                    "exploitability_score": exploitability_score,
-                    "impact_score": impact_score,
-                    "references": references,
-                }
-                output_file: Path = output_path / f"{cve_id}.json"
                 with output_file.open("w", encoding="utf-8") as f:
-                    json.dump(flat_item, f, indent=2)
+                    json.dump(cve_item.model_dump(mode="json"), f, indent=2)
 
         except Exception as e:
             msg = "Failed to parse NVD data"
@@ -273,6 +262,126 @@ class DataParser:
             output_file = rel_dir / f"{item.id}.json"
             with output_file.open("w", encoding="utf-8") as f:
                 f.write(item.model_dump_json(indent=2))
+
+    @classmethod
+    def parse_cve_json(cls, data: dict[str, Any]) -> CVEItem:
+        cve = data.get("cve", {})
+        configurations = data.get("configurations", {})
+        impact = data.get("impact", {})
+
+        # --- CVE Subsections ---
+        meta = cve.get("CVE_data_meta", {})
+        problemtype = cve.get("problemtype", {}).get("problemtype_data", [])
+        references = cve.get("references", {}).get("reference_data", [])
+        descriptions = cve.get("description", {}).get("description_data", [])
+
+        # CVEDataMeta
+        cve_data_meta = CVEDataMeta(
+            id=meta.get("ID", ""),
+            assigner=meta.get("ASSIGNER", ""),
+        )
+
+        # ProblemType
+        problemtype_data = [
+            ProblemTypeData(
+                description=[
+                    ProblemTypeDescription(
+                        lang=d.get("lang"),
+                        value=d.get("value"),
+                    )
+                    for d in pt.get("description", [])
+                ],
+            )
+            for pt in problemtype
+        ]
+
+        # References
+        reference_data = [
+            ReferenceData(
+                url=ref.get("url", ""),
+                name=ref.get("name", ""),
+                refsource=ref.get("refsource", ""),
+                tags=ref.get("tags", []),
+            )
+            for ref in references
+        ]
+
+        # Description
+        description_data = [
+            DescriptionData(
+                lang=d.get("lang", ""),
+                value=d.get("value", ""),
+            )
+            for d in descriptions
+        ]
+
+        # --- Configuration ---
+        nodes = configurations.get("nodes", [])
+        parsed_nodes = [
+            Node(
+                operator=node.get("operator", "OR"),
+                negate=node.get("negate", False),
+                cpe_match=[
+                    CPEMatch(
+                        vulnerable=match.get("vulnerable", False),
+                        cpe23_uri=match.get("cpe23Uri", ""),
+                        version_start_including=match.get("versionStartIncluding"),
+                        version_start_excluding=match.get("versionStartExcluding"),
+                        version_end_including=match.get("versionEndIncluding"),
+                        version_end_excluding=match.get("versionEndExcluding"),
+                        cpe_name=match.get("cpe_name") or [],
+                    )
+                    for match in node.get("cpe_match", [])
+                ],
+            )
+            for node in nodes
+        ]
+
+        # --- Impact ---
+        cvss = impact.get("baseMetricV3", {}).get("cvssV3", {})
+        base_metric_v3 = (
+            BaseMetricV3(
+                cvss_v3=CVSSv3(
+                    version=cvss.get("version", ""),
+                    vector_string=cvss.get("vectorString", ""),
+                    attack_vector=cvss.get("attackVector", ""),
+                    attack_complexity=cvss.get("attackComplexity", ""),
+                    privileges_required=cvss.get("privilegesRequired", ""),
+                    user_interaction=cvss.get("userInteraction", ""),
+                    scope=cvss.get("scope", ""),
+                    confidentiality_impact=cvss.get("confidentialityImpact", ""),
+                    integrity_impact=cvss.get("integrityImpact", ""),
+                    availability_impact=cvss.get("availabilityImpact", ""),
+                    base_score=cvss.get("baseScore", 0.0),
+                    base_severity=cvss.get("baseSeverity", ""),
+                ),
+                exploitability_score=impact.get("baseMetricV3", {}).get(
+                    "exploitabilityScore",
+                ),
+                impact_score=impact.get("baseMetricV3", {}).get("impactScore"),
+            )
+            if impact.get("baseMetricV3")
+            else None
+        )
+
+        return CVEItem(
+            cve=CVE(
+                data_type=cve.get("data_type", ""),
+                data_format=cve.get("data_format", ""),
+                data_version=cve.get("data_version", ""),
+                cve_data_meta=cve_data_meta,
+                problem_type=ProblemType(problemtype_data=problemtype_data),
+                references=References(reference_data=reference_data),
+                description=Description(description_data=description_data),
+            ),
+            configurations=Configuration(
+                cve_data_version=configurations.get("CVE_data_version", ""),
+                nodes=parsed_nodes,
+            ),
+            impact=Impact(base_metric_v3=base_metric_v3),
+            published_date=data.get("publishedDate", ""),
+            last_modified_date=data.get("lastModifiedDate", ""),
+        )
 
 
 def _parse_instruction_set() -> None:
