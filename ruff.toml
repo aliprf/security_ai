@@ -1,6 +1,8 @@
 [lint]
 select = ["ALL"]
 ignore = [
+        "CPY001", # docsting
+        "D100", # docsting
         "D101", # docsting
         "D102", # docsting
         "D103", # docsting

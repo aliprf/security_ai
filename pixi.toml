@@ -5,14 +5,20 @@ authors = ["Aliprf <aliprf@gmail.com>"]
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
-[dependencies]
 
-[feature.prod.dependencies]
+[dependencies]
+flask = "*"
 python = "3.12.*" 
 openai = "*"
 langchain = "*"
 langgraph = "*"
 pydantic = "*"
+
+[pypi-dependencies]
+gradio = "*"
+
+[feature.prod.dependencies]
+
 
 [feature.dev.dependencies]
 pytest = "*"
@@ -22,4 +28,28 @@ features = ["prod"]
 
 [environments.dev]
 features = ["prod", "dev"]
+
+
+[tasks.test]
+cmd = "pytest --maxfail=1 --disable-warnings -q"
+env = { PYTHONPATH = "." }
+
+
+[tasks.run_script]
+cmd = "python"
+args = ["${file}"]
+env = { PYTHONPATH = "." }
+
+
+[tasks.parse]
+cmd = ["python", "utilities/parser.py"]
+env = { PYTHONPATH = "." }
+
+
+
+[tasks.explain_rf]
+cmd = ["python", "ml/model/random_forest_explainer.py"]
+
+[tasks.up]
+cmd = ["python", "main.py"]
 

@@ -10,7 +10,7 @@ from commons.attack_patterns import ExternalReference
 class IntrusionSet(BaseModel):
     type: str = Field(..., description="Object type, e.g., intrusion-set")
     id: str = Field(..., description="STIX object ID")
-    created: datetime | None= Field(..., description="Creation timestamp")
+    created: datetime | None = Field(..., description="Creation timestamp")
     modified: datetime | None = Field(..., description="Last modification timestamp")
     name: str = Field(..., description="Name of the intrusion set")
     description: str | None = Field(

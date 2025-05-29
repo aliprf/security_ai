@@ -33,42 +33,56 @@ class DataParser:
         output_path = Path(output_path_address)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        with input_path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
+        for file_name in input_path.iterdir():
+            if file_name.is_file() and file_name.suffix == ".json":
+                with file_name.open("r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    for obj in data.get("objects", []):
+                        if obj.get("type") != "intrusion-set":
+                            continue
 
-        for obj in data.get("objects", []):
-            if obj.get("type") != "intrusion-set":
-                continue
+                        def parse_dt(dt_str: str) -> datetime | None:
+                            return (
+                                datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                                if dt_str
+                                else None
+                            )
 
-            def parse_dt(dt_str: str) -> datetime | None:
-                return datetime.fromisoformat(dt_str.replace("Z", "+00:00")) if dt_str else None
+                        external_refs = [
+                            ExternalReference(**ref)
+                            for ref in obj.get("external_references", [])
+                        ]
 
-            external_refs = [ExternalReference(**ref) for ref in obj.get("external_references", [])]
+                        intrusion_set = IntrusionSet(
+                            type=obj.get("type", ""),
+                            id=obj.get("id", ""),
+                            name=obj.get("name", ""),
+                            description=obj.get("description", ""),
+                            aliases=obj.get("aliases", []),
+                            x_mitre_deprecated=obj.get("x_mitre_deprecated", False),
+                            x_mitre_version=obj.get("x_mitre_version", ""),
+                            modified=parse_dt(obj.get("modified")),
+                            created=parse_dt(obj.get("created")),
+                            created_by_ref=obj.get("created_by_ref", ""),
+                            revoked=obj.get("revoked", False),
+                            external_references=external_refs,
+                            object_marking_refs=obj.get("object_marking_refs", []),
+                            x_mitre_domains=obj.get("x_mitre_domains", []),
+                            x_mitre_attack_spec_version=obj.get(
+                                "x_mitre_attack_spec_version",
+                                "",
+                            ),
+                            x_mitre_modified_by_ref=obj.get(
+                                "x_mitre_modified_by_ref",
+                                "",
+                            ),
+                            x_mitre_contributors=obj.get("x_mitre_contributors"),
+                        )
 
-            intrusion_set = IntrusionSet(
-                type=obj["type"],  # <-- include this
-                id=obj["id"],
-                name=obj["name"],
-                description=obj["description"],
-                aliases=obj.get("aliases", []),
-                x_mitre_deprecated=obj.get("x_mitre_deprecated", False),
-                x_mitre_version=obj.get("x_mitre_version", ""),
-                modified=parse_dt(obj.get("modified")),
-                created=parse_dt(obj.get("created")),
-                created_by_ref=obj["created_by_ref"],
-                revoked=obj.get("revoked", False),
-                external_references=external_refs,
-                object_marking_refs=obj.get("object_marking_refs", []),
-                x_mitre_domains=obj.get("x_mitre_domains", []),
-                x_mitre_attack_spec_version=obj.get("x_mitre_attack_spec_version", ""),
-                x_mitre_modified_by_ref=obj.get("x_mitre_modified_by_ref", ""),
-                x_mitre_contributors=obj.get("x_mitre_contributors"),
-            )
-
-            # Save individual intrusion set JSON file
-            output_file = output_path / f"{intrusion_set.id}.json"
-            with output_file.open("w", encoding="utf-8") as out_f:
-                out_f.write(intrusion_set.model_dump_json(indent=2))
+                        # Save individual intrusion set JSON file
+                        output_file = output_path / f"{intrusion_set.id}.json"
+                        with output_file.open("w", encoding="utf-8") as out_f:
+                            out_f.write(intrusion_set.model_dump_json(indent=2))
 
     @classmethod
     def parse_nvd(cls, input_address_path: str, outpout_address_path: str) -> None:
@@ -116,7 +130,6 @@ class DataParser:
                     "impact_score": impact_score,
                     "references": references,
                 }
-
                 output_file: Path = output_path / f"{cve_id}.json"
                 with output_file.open("w", encoding="utf-8") as f:
                     json.dump(flat_item, f, indent=2)
@@ -262,7 +275,7 @@ class DataParser:
                 f.write(item.model_dump_json(indent=2))
 
 
-def teat_parse_instruction_set() -> None:
+def _parse_instruction_set() -> None:
     input_file: str = Config.get_raw_instrution_set_path()
     output_dir: str = Config.get_instrution_set_path()
 
@@ -272,7 +285,7 @@ def teat_parse_instruction_set() -> None:
     )
 
 
-def teat_parse_relations() -> None:
+def _parse_relations() -> None:
     input_file: str = Config.get_raw_relations_path()
     output_dir: str = Config.get_relations_path()
 
@@ -282,7 +295,7 @@ def teat_parse_relations() -> None:
     )
 
 
-def test_parse_attack_patterns() -> None:
+def _parse_attack_patterns() -> None:
     input_file: str = Config.get_raw_attacks_path()
     output_dir: str = Config.get_attacks_path()
 
@@ -292,8 +305,27 @@ def test_parse_attack_patterns() -> None:
     )
 
 
-def test_nvd() -> None:
+def _parse_nvd() -> None:
     input_file: str = Config.get_raw_cve_path()
     output_dir: str = Config.get_cve_path()
 
     DataParser.parse_nvd(input_address_path=input_file, outpout_address_path=output_dir)
+
+
+def parse_raw_datasets() -> bool:
+    try:
+        _parse_nvd()
+        _parse_instruction_set()
+        _parse_attack_patterns()
+        _parse_relations()
+    except Exception as e:
+        msg = f"Exception in parse_raw_datasets: {e!s}"
+        logger.exception(msg)
+        return False
+    else:
+        logger.info(" parse_raw_datasets = > True")
+        return True
+
+
+if __name__ == "__main__":
+    parse_raw_datasets()
