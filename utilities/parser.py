@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 
 from commons.attack_patterns import (
     AdversaryDifficulty,
@@ -31,13 +31,11 @@ from commons.cve_items import (
     ReferenceData,
     References,
 )
-from commons.instruction_bundle import IntrusionSet, IstructionBundle
+from commons.instruction_bundle import IntrusionSet
 from commons.logger import get_logger
 from config import Config
 
 logger = get_logger(__name__)
-
-BundleType = TypeVar("BundleType", bound="IstructionBundle")
 
 
 class DataParser:
@@ -97,7 +95,6 @@ class DataParser:
                             x_mitre_contributors=obj.get("x_mitre_contributors"),
                         )
 
-                        # Save individual intrusion set JSON file
                         output_file = output_path / f"{intrusion_set.id}.json"
                         with output_file.open("w", encoding="utf-8") as out_f:
                             out_f.write(intrusion_set.model_dump_json(indent=2))

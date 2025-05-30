@@ -39,7 +39,7 @@ class IntrusionSet(BaseModel):
     )
     x_mitre_contributors: list[str] | None = Field(
         None,
-        description="list of contributors to the entry",
+        description="lIstructionBundleist of contributors to the entry",
     )
     x_mitre_domains: list[str] = Field(
         ..., description="Domains where this applies (e.g., enterprise-attack)",
@@ -50,13 +50,4 @@ class IntrusionSet(BaseModel):
     x_mitre_modified_by_ref: str | None = Field(
         None,
         description="Reference to the identity that modified the object",
-    )
-
-
-class IstructionBundle(BaseModel):
-    type: str = Field(..., description="Object type, e.g., bundle")
-    id: str = Field(..., description="STIX bundle ID")
-    spec_version: str = Field(..., description="STIX spec version")
-    objects: list[IntrusionSet] = Field(
-        ..., description="Contained STIX domain objects",
     )

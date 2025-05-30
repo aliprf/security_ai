@@ -13,6 +13,12 @@ instruction_set_path = processed_prefix + "intrusion-set/"
 attack_path = processed_prefix + "attacks/"
 relations_path = processed_prefix + "relations/"
 
+embedding_prefix = "data/embeddings/"
+cve_path_embedding_file = embedding_prefix + "nvd.pkl"
+instruction_set_path_embedding_file = embedding_prefix + "intrusion-set.pkl"
+attack_path_embedding_file = embedding_prefix + "attacks.pkl"
+relations_path_embedding_file = embedding_prefix + "relations.pkl"
+
 
 class Config:
     @classmethod
@@ -59,3 +65,19 @@ class Config:
     @classmethod
     def get_relations_path(cls) -> str:
         return relations_path
+
+    @classmethod
+    def get_cve_embedding_file(cls) -> str:
+        return cve_path_embedding_file
+
+    @classmethod
+    def get_instrution_set_embedding_file(cls) -> str:
+        return instruction_set_path_embedding_file
+
+    @classmethod
+    def get_attacks_embedding_file(cls) -> str:
+        return attack_path_embedding_file
+
+    @classmethod
+    def get_relations_embedding_file(cls) -> str:
+        return relations_path_embedding_file

@@ -13,11 +13,13 @@ openai = "*"
 langchain = "*"
 langgraph = "*"
 pydantic = "*"
+sentence-transformers = "*"
 
 
 [pypi-dependencies]
 gradio = "*"
-chromadb= "*"
+tqdm = "*"
+
 
 [feature.prod.dependencies]
 
@@ -49,9 +51,11 @@ env = { PYTHONPATH = "." }
 
 
 
-[tasks.explain_rf]
-cmd = ["python", "ml/model/random_forest_explainer.py"]
+[tasks.ce] #create_embeddings
+cmd = ["python", "utilities/embedding_creator.py"]
+env = { PYTHONPATH = "." }
 
 [tasks.up]
 cmd = ["python", "main.py"]
+env = { PYTHONPATH = "." }
 
