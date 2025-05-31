@@ -14,7 +14,7 @@ langchain = "*"
 langgraph = "*"
 pydantic = "*"
 sentence-transformers = "*"
-
+langchain-openai = "*"
 
 [pypi-dependencies]
 gradio = "*"

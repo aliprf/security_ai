@@ -1,17 +1,19 @@
 import sys
 from pathlib import Path
 
-from config import Config
-from utilities.embedding_creator import EntityEmbedder
+from utilities.embedding_search import (
+    search_attack_embedding,
+    search_attack_relations_embedding,
+    search_cev_embedding,
+    search_intrusion_embedding,
+)
 
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 
 if __name__ == "__main__":
-    embedder = EntityEmbedder()
-    embedder.embed_intrusion_sets_from_directory(
-        input_dir=Config.get_instrution_set_path(),
-        output_file=Config.get_instrution_set_embedding_file(),
-    )
-    pass
+    search_intrusion_embedding(query="login multiple")
+    # search_cev_embedding(query="login multiple")
+    # search_attack_embedding(query="login multiple")
+    # search_attack_relations_embedding(query="login multiple")

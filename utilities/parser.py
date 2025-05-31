@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,7 +30,7 @@ from commons.cve_items import (
     ReferenceData,
     References,
 )
-from commons.instruction_bundle import IntrusionSet
+from commons.intrusionset import IntrusionSet
 from commons.logger import get_logger
 from config import Config
 
@@ -57,13 +56,6 @@ class DataParser:
                         if obj.get("type") != "intrusion-set":
                             continue
 
-                        def parse_dt(dt_str: str) -> datetime | None:
-                            return (
-                                datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-                                if dt_str
-                                else None
-                            )
-
                         external_refs = [
                             ExternalReference(**ref)
                             for ref in obj.get("external_references", [])
@@ -77,8 +69,8 @@ class DataParser:
                             aliases=obj.get("aliases", []),
                             x_mitre_deprecated=obj.get("x_mitre_deprecated", False),
                             x_mitre_version=obj.get("x_mitre_version", ""),
-                            modified=parse_dt(obj.get("modified")),
-                            created=parse_dt(obj.get("created")),
+                            modified=obj.get("modified"),
+                            created=obj.get("created"),
                             created_by_ref=obj.get("created_by_ref", ""),
                             revoked=obj.get("revoked", False),
                             external_references=external_refs,
@@ -92,7 +84,7 @@ class DataParser:
                                 "x_mitre_modified_by_ref",
                                 "",
                             ),
-                            x_mitre_contributors=obj.get("x_mitre_contributors"),
+                            x_mitre_contributors=obj.get("x_mitre_contributors", []),
                         )
 
                         output_file = output_path / f"{intrusion_set.id}.json"
@@ -155,55 +147,35 @@ class DataParser:
                             break
 
                     attack_pattern = NormalizedAttackPattern(
-                        id=obj["id"],
-                        name=obj["name"],
-                        description=obj.get("description"),
-                        external_id=external_id,
-                        source_url=source_url,
-                        kill_chain=(
-                            KillChainPhase(
-                                name=obj["kill_chain_phases"][0]["kill_chain_name"],
-                                phase=obj["kill_chain_phases"][0]["phase_name"],
-                            )
-                            if obj.get("kill_chain_phases")
-                            else None
+                        id=obj.get("id", ""),
+                        name=obj.get("name", ""),
+                        description=obj.get("description", ""),
+                        external_id=external_id or "",
+                        source_url=source_url or "",
+                        kill_chain=KillChainPhase(
+                            name=obj["kill_chain_phases"][0].get("kill_chain_name", ""),
+                            phase=obj["kill_chain_phases"][0].get("phase_name", ""),
+                        )
+                        if obj.get("kill_chain_phases")
+                        else KillChainPhase(name="", phase=""),
+                        detectable_by_defense=DefenseDetectability(
+                            status=obj.get("x_mitre_detectable_by_common_defenses", ""),
+                            explanation=obj.get(
+                                "x_mitre_detectable_by_common_defenses_explanation",
+                                "",
+                            ),
                         ),
-                        detectable_by_defense=(
-                            DefenseDetectability(
-                                status=obj.get("x_mitre_detectable_by_common_defenses"),
-                                explanation=obj.get(
-                                    "x_mitre_detectable_by_common_defenses_explanation",
-                                ),
-                            )
-                            if obj.get("x_mitre_detectable_by_common_defenses")
-                            else None
-                        ),
-                        adversary_difficulty=(
-                            AdversaryDifficulty(
-                                status=obj.get("x_mitre_difficulty_for_adversary"),
-                                explanation=obj.get(
-                                    "x_mitre_difficulty_for_adversary_explanation",
-                                ),
-                            )
-                            if obj.get("x_mitre_difficulty_for_adversary")
-                            else None
+                        adversary_difficulty=AdversaryDifficulty(
+                            status=obj.get("x_mitre_difficulty_for_adversary", ""),
+                            explanation=obj.get(
+                                "x_mitre_difficulty_for_adversary_explanation",
+                                "",
+                            ),
                         ),
                         deprecated=obj.get("x_mitre_deprecated", False),
-                        version=obj.get("x_mitre_version"),
-                        created=(
-                            datetime.fromisoformat(
-                                obj["created"].replace("Z", "+00:00"),
-                            )
-                            if "created" in obj
-                            else None
-                        ),
-                        modified=(
-                            datetime.fromisoformat(
-                                obj["modified"].replace("Z", "+00:00"),
-                            )
-                            if "modified" in obj
-                            else None
-                        ),
+                        version=obj.get("x_mitre_version", ""),
+                        created=obj.get("created", "").replace("Z", "+00:00"),
+                        modified=obj.get("modified", "").replace("Z", "+00:00"),
                     )
 
                     parsed_items.append(attack_pattern)
@@ -236,22 +208,25 @@ class DataParser:
             for obj in data.get("objects", []):
                 if obj.get("type") == "relationship":
                     model = Relationship(
-                        id=obj["id"],
-                        type=obj["type"],
-                        source_ref=obj["source_ref"],
-                        target_ref=obj["target_ref"],
-                        relationship_type=obj["relationship_type"],
-                        description=obj.get("description"),
-                        created_by_ref=obj.get("created_by_ref"),
-                        object_marking_refs=obj.get("object_marking_refs"),
+                        id=obj.get("id", ""),
+                        type=obj.get("type", ""),
+                        source_ref=obj.get("source_ref", ""),
+                        target_ref=obj.get("target_ref", ""),
+                        relationship_type=obj.get("relationship_type", ""),
+                        description=obj.get("description", ""),
+                        created_by_ref=obj.get("created_by_ref", ""),
+                        object_marking_refs=obj.get("object_marking_refs", []),
                         external_references=[
-                            ExternalReference(**ref)
+                            ExternalReference(
+                                source_name=ref.get("source_name", ""),
+                                external_id=ref.get("external_id", ""),
+                                url=ref.get("url", ""),
+                                description=ref.get("description", ""),
+                            )
                             for ref in obj.get("external_references", [])
-                        ]
-                        if obj.get("external_references")
-                        else None,
-                        created=obj.get("created"),
-                        modified=obj.get("modified"),
+                        ],
+                        created=obj.get("created", "").replace("Z", "+00:00"),
+                        modified=obj.get("modified", "").replace("Z", "+00:00"),
                     )
                     items.append(model)
 
