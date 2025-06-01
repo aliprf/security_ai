@@ -5,6 +5,7 @@ import json
 from langchain.schema import AIMessage, HumanMessage
 from langchain.tools import BaseTool
 from langchain_openai import ChatOpenAI
+from pydantic import PrivateAttr
 
 from commons.incident_context import IncidentContext
 from commons.logger import get_logger
@@ -14,16 +15,17 @@ logger = get_logger(__name__)
 
 
 class IdentifyRelevantAttackPatternsTool(BaseTool):
-    name = "identify_relevant_attack_patterns"
-    description = f"""
+    name: str = "identify_relevant_attack_patterns"
+    description: str = f"""
     Identifies the most relevant ATT&CK patterns for a cybersecurity incident.
     Input should match the following JSON schema:
     {IncidentContext.model_json_schema()}
     """
+    _llm: ChatOpenAI = PrivateAttr()
 
     def __init__(self, llm: ChatOpenAI, **kwargs):
         super().__init__(**kwargs)
-        self.llm = llm
+        self._llm = llm
 
     def _run(self, raw_incident: str) -> str:
         try:

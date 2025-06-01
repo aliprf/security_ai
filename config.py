@@ -35,6 +35,10 @@ class Config:
         raise ValueError(msg)
 
     @classmethod
+    def get_model_name(cls) -> str:
+        return "gpt4.1-nano"
+
+    @classmethod
     def get_raw_cve_path(cls) -> str:
         return raw_cve_path
 

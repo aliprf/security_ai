@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, cast
 
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
@@ -12,18 +12,19 @@ logger = get_logger(__name__)
 
 class ParseIncidentContextArgs(BaseModel):
     raw_incident: str = Field(
-        ..., description="""Raw JSON string representing the incident report.""",
+        ...,
+        description="""Raw JSON string representing the incident report.""",
     )
 
 
 class ParseIncidentContextTool(BaseTool):
-    name = "parse_incident_context"
-    description = f"""
+    name: str = "parse_incident_context"
+    description: str = f"""
         This is the First tool you must use:
         This tool convert the input data, which is a raw incident in a json format to
             an instance of this JSON schema as follows:
             {IncidentContext.model_json_schema()}"""
-    args_schema = ParseIncidentContextArgs
+    args_schema: Any = cast("Any", ParseIncidentContextArgs)
 
     def _run(self, raw_incident: str) -> str:  # noqa: PLR6301
         try:

@@ -5,6 +5,7 @@ import json
 from langchain.schema import AIMessage, HumanMessage
 from langchain.tools import BaseTool
 from langchain_openai import ChatOpenAI
+from pydantic import PrivateAttr
 
 from commons.incident_context import IncidentContext
 from commons.logger import get_logger
@@ -14,16 +15,17 @@ logger = get_logger(__name__)
 
 
 class IdentifyRelevantCVEsTool(BaseTool):
-    name = "identify_relevant_cves"
-    description = f"""
+    name: str = "identify_relevant_cves"
+    description: str = f"""
     Identifies the most relevant CVEs for a cybersecurity incident.
     Input should match the following JSON schema:
     {IncidentContext.model_json_schema()}
     """
+    _llm: ChatOpenAI = PrivateAttr()
 
     def __init__(self, llm: ChatOpenAI, **kwargs):
         super().__init__(**kwargs)
-        self.llm = llm
+        self._llm = llm
 
     def _run(self, raw_incident: str) -> str:
         try:
@@ -58,7 +60,7 @@ that are likely to be associated with this incident.
 - Provide a human-friendly analysis in bullet format explaining
     why each selected CVE is relevant.
 """
-            response = self.llm([HumanMessage(content=prompt)])
+            response = self._llm([HumanMessage(content=prompt)])
 
             if (
                 isinstance(response, list)

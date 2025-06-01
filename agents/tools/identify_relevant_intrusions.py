@@ -5,6 +5,7 @@ import json
 from langchain.schema import AIMessage, HumanMessage
 from langchain.tools import BaseTool
 from langchain_openai import ChatOpenAI
+from pydantic import PrivateAttr
 
 from commons.incident_context import IncidentContext
 from commons.logger import get_logger
@@ -14,16 +15,17 @@ logger = get_logger(__name__)
 
 
 class IdentifyRelevantInstructionsTool(BaseTool):
-    name = "identify_relevant_instructions"
-    description = f"""
+    name: str = "identify_relevant_instructions"
+    description: str = f"""
     Identifies the most relevant response instructions for a cybersecurity incident.
     Input should match the following JSON schema:
     {IncidentContext.model_json_schema()}
     """
+    _llm: ChatOpenAI = PrivateAttr()
 
     def __init__(self, llm: ChatOpenAI, **kwargs):
         super().__init__(**kwargs)
-        self.llm = llm
+        self._llm = llm
 
     def _run(self, raw_incident: str) -> str:
         try:
@@ -59,9 +61,13 @@ that best respond to the incident.
 - Given the 'incident', and the relevant 'intrusion sets', deeply analyze if these
 intrusions are relevant or not. Provide a human friendly report in a bullte format.
 """
-            response = self.llm([HumanMessage(content=prompt)])
+            response = self._llm([HumanMessage(content=prompt)])
 
-            if isinstance(response, list) and response and isinstance(response[0], AIMessage):
+            if (
+                isinstance(response, list)
+                and response
+                and isinstance(response[0], AIMessage)
+            ):
                 return str(response[0].content)
             if isinstance(response, AIMessage):
                 return str(response.content)
