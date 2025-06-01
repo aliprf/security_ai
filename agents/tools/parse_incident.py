@@ -78,6 +78,6 @@ def parse_incident(raw: dict[str, Any]) -> IncidentContext:
             if ioc["type"] == "username"
         ],
         inferred_software=inferred_software,
-        inferred_cves=[],  # Populated later
+        inferred_cves=[], 
         initial_findings=raw.get("initial_findings", ""),
     )
