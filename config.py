@@ -36,7 +36,7 @@ class Config:
 
     @classmethod
     def get_model_name(cls) -> str:
-        return "gpt4.1-nano"
+        return "gpt-4.1-nano"
 
     @classmethod
     def get_raw_cve_path(cls) -> str:

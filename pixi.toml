@@ -15,6 +15,7 @@ langgraph = "*"
 pydantic = "*"
 sentence-transformers = "*"
 langchain-openai = "*"
+python-dotenv = "*"
 
 [pypi-dependencies]
 gradio = "*"
@@ -53,6 +54,11 @@ env = { PYTHONPATH = "." }
 
 [tasks.ce] #create_embeddings
 cmd = ["python", "utilities/embedding_creator.py"]
+env = { PYTHONPATH = "." }
+
+
+[tasks.analyzer_agent] #create_embeddings
+cmd = ["python", "agents/orch.py"]
 env = { PYTHONPATH = "." }
 
 [tasks.up]
