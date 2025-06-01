@@ -1,14 +1,19 @@
 import sys
 from pathlib import Path
 
-# Add project root to sys.path
+from utilities.embedding_search import (
+    search_attack_embedding,
+    search_attack_relations_embedding,
+    search_cev_embedding,
+    search_intrusion_embedding,
+)
+
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 
-from utilities.parser import teat_parse_relations, test_nvd, test_parse_attack_patterns
-
 if __name__ == "__main__":
-    teat_parse_relations()
-    test_parse_attack_patterns()
-    test_nvd()
+    search_intrusion_embedding(query="login multiple")
+    # search_cev_embedding(query="login multiple")
+    # search_attack_embedding(query="login multiple")
+    # search_attack_relations_embedding(query="login multiple")
