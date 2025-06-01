@@ -1,16 +1,21 @@
 # security_analysis_pipeline.py
 
+import os
 from typing import TypedDict, cast
 
+from dotenv import load_dotenv
 from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph
 
 from agents.security_analyzer import SecurityAnalyzerAgent
+from agents.tools.parse_incident import ParseIncidentContextTool
 from agents.tools.security_reporter import SecurityReporterTool
 from commons.logger import get_logger
 from config import Config
 
+# Load variables from .env into the environment
+load_dotenv()
 logger = get_logger(__name__)
 
 
@@ -20,15 +25,21 @@ class PipelineState(TypedDict):
 
 class SecurityAnalysisPipeline:
     def __init__(self, model_name: str, temperature: float = 0.2):
-        self.llm = ChatOpenAI(model=model_name, temperature=temperature)
+        self.llm = ChatOpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            model=model_name,
+            temperature=temperature)
         self.analyzer = SecurityAnalyzerAgent(
-            model_name=model_name,
-            temperature=temperature,
+            llm=self.llm,
         )
+        self.parser = ParseIncidentContextTool()
         self.reporter = SecurityReporterTool(llm=self.llm)
         self.graph = self._build_graph()
 
     def _build_graph(self):
+        def run_parsing(state: PipelineState) -> PipelineState:
+            return {"input": self.parser.run(state["input"])}
+
         def run_analysis(state: PipelineState) -> PipelineState:
             return {"input": self.analyzer.analyze(state["input"])}
 
@@ -37,9 +48,12 @@ class SecurityAnalysisPipeline:
 
         workflow = StateGraph(PipelineState)
 
+        workflow.add_node("SecurityParseInput", RunnableLambda(run_parsing))
         workflow.add_node("SecurityAnalysis", RunnableLambda(run_analysis))
         workflow.add_node("SecurityReport", RunnableLambda(run_reporting))
-        workflow.set_entry_point("SecurityAnalysis")
+
+        workflow.set_entry_point("SecurityParseInput")
+        workflow.add_edge("SecurityParseInput", "SecurityAnalysis")
         workflow.add_edge("SecurityAnalysis", "SecurityReport")
         workflow.set_finish_point("SecurityReport")
 
@@ -51,7 +65,6 @@ class SecurityAnalysisPipeline:
 
 
 if __name__ == "__main__":
-    analyzer = SecurityAnalyzerAgent(model_name=Config.get_model_name())
     raw_incident_json_string = """{
         "incident_id": "INC-2023-08-01-001",
         "timestamp": "2023-08-01T09:15:00Z",

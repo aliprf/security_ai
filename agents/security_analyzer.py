@@ -15,8 +15,8 @@ logger = get_logger(__name__)
 
 
 class SecurityAnalyzerAgent:
-    def __init__(self, model_name: str, temperature: float = 0.2):
-        self.llm = ChatOpenAI(model=model_name, temperature=temperature)
+    def __init__(self, llm: ChatOpenAI):
+        self.llm = llm
         self.agent = self._build_agent()
 
     def _build_agent(self):

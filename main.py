@@ -1,19 +1,44 @@
-import sys
-from pathlib import Path
+import threading
+import time
 
-from utilities.embedding_search import (
-    search_attack_embedding,
-    search_attack_relations_embedding,
-    search_cev_embedding,
-    search_intrusion_embedding,
-)
+import requests
+import uvicorn
 
-project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root))
+from client.client import launch_gradio
+from commons.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+def run_server():
+    uvicorn.run("server.server:app", host="127.0.0.1", port=8000, log_level="info")
+
+
+def wait_for_server(host="127.0.0.1", port=8000, timeout=30):
+    url = f"http://{host}:{port}/health"
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            res = requests.get(url)
+            if res.status_code == 200:
+                logger.info("FastAPI server is ready.")
+                return True
+        except requests.ConnectionError:
+            pass
+        time.sleep(0.5)
+    raise TimeoutError(f"FastAPI server not available after {timeout} seconds")
+
+
+def main():
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+
+    wait_for_server()
+
+    client_thread = threading.Thread(target=launch_gradio)
+    client_thread.start()
+    client_thread.join()
 
 
 if __name__ == "__main__":
-    search_intrusion_embedding(query="login multiple")
-    # search_cev_embedding(query="login multiple")
-    # search_attack_embedding(query="login multiple")
-    # search_attack_relations_embedding(query="login multiple")
+    main()
