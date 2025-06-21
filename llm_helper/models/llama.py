@@ -10,6 +10,7 @@ from llm_helper.chat_model.conversational_chat_model import (
     AIChatModel,
     Role,
 )
+from llm_helper.models.llm_interface import ILLM
 
 logger = get_logger(__name__)
 
@@ -18,7 +19,7 @@ class LlamaModel(str, Enum):
     llama3_1_8b_chat = "llama3.1:8b"
 
 
-class LLaMA:
+class LLaMA(ILLM):
     def __init__(
         self,
         model_name: str = LlamaModel.llama3_1_8b_chat,
@@ -56,7 +57,7 @@ class LLaMA:
             str_template += f"{temp.role}: {temp.message}\n"
         return str_template
 
-    def chat(self, prompt: str, instruction: str) -> str:
+    def generate(self, prompt: str, instruction: str) -> str:
         """Generate a response from the model given prompt and instruction.
 
         Args:
@@ -77,7 +78,7 @@ class LLaMA:
 
 if __name__ == "__main__":
     llm = LLaMA(model_name=LlamaModel.llama3_1_8b_chat)
-    answer = llm.chat(
+    answer = llm.generate(
         prompt="What is the capital of France?",
         instruction="""
         you are a helpful assistant. deeply think and answer the question.

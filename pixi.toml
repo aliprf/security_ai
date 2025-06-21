@@ -20,7 +20,7 @@ python-dotenv = "*"
 [pypi-dependencies]
 gradio = "*"
 tqdm = "*"
-
+langchain-ollama = "*"
 
 [feature.prod.dependencies]
 
@@ -54,6 +54,11 @@ env = { PYTHONPATH = "." }
 
 [tasks.ce] #create_embeddings
 cmd = ["python", "utilities/embedding_creator.py"]
+env = { PYTHONPATH = "." }
+
+
+[tasks.test_llama]
+cmd = ["python", "llm_helper/models/llama.py"]
 env = { PYTHONPATH = "." }
 
 

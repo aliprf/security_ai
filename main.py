@@ -26,7 +26,8 @@ def wait_for_server(host="127.0.0.1", port=8000, timeout=30):
         except requests.ConnectionError:
             pass
         time.sleep(0.5)
-    raise TimeoutError(f"FastAPI server not available after {timeout} seconds")
+    msg = f"FastAPI server not available after {timeout} seconds"
+    raise TimeoutError(msg)
 
 
 def main():
